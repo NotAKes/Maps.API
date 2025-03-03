@@ -12,16 +12,16 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 from geocoder import show_map, get_ll, geocoder, get_address_coords
 
 
-def get_image(spn=0.01):
-    # Пусть наше приложение предполагает запуск:
-    # python search.py Москва, ул. Ак. Королева, 12
-    # Тогда запрос к геокодеру формируется следующим образом:
+def get_image_and_spn(spn='0.5'):
+    if  0.5 > float(spn) > 2.5:
+        spn = '0.5'
+        print(spn)
     toponym_to_find = 'pass'
     if toponym_to_find:
         lat, lon = 56.92, 60.56
-        ll_spn = f'll-{lat},{lon}&spn=0.5,0.5'
+        ll_spn = f'll-{lat},{lon}&spn={spn},{spn}'
         show_map(ll_spn)
-        ll, spn = f'{lat},{lon}', 0.5
+        ll, spn = f'{lat},{lon}', f'{spn}'
         ll_spn = f'll={ll}&spn={spn}'
         show_map(ll_spn)
         point_param = f'pt-{ll}'
@@ -48,7 +48,7 @@ def get_image(spn=0.01):
     # # Долгота и широта:
     toponym_longitude, toponym_lattitude = str(lon), str(lat)
 
-    delta = "0.5"
+    delta = spn
     apikey = "f3a0fe3a-b07e-4840-a1da-06f18b2ddf13"
 
     # Собираем параметры для запроса к StaticMapsAPI:
@@ -64,12 +64,14 @@ def get_image(spn=0.01):
     im = BytesIO(response.content)
     opened_image = Image.open(im)
     opened_image.save('map.png')
+    return float(spn)
 
 
 class AlphaManagement(QMainWindow, Ui_MainWindow):
-    def __init__(self):
+    def __init__(self, spn):
         super().__init__()
         self.setupUi(self)
+        self.spn = spn
         self.initUI()
 
     def initUI(self):
@@ -83,12 +85,19 @@ class AlphaManagement(QMainWindow, Ui_MainWindow):
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_PageUp:
-            pass
+            self.spn += 0.5
+        elif event.key() == Qt.Key.Key_PageDown:
+            self.spn -= 0.5
+        get_image_and_spn(str(self.spn))
+        self.curr_image = QImage('map.png')
+        self.pixmap = QPixmap.fromImage(self.curr_image)
+        self.image.setPixmap(self.pixmap)
+
 
 
 if __name__ == '__main__':
-    get_image()
+    spn = get_image_and_spn()
     app = QApplication(sys.argv)
-    ex = AlphaManagement()
+    ex = AlphaManagement(spn)
     ex.show()
     sys.exit(app.exec())
