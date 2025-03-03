@@ -12,10 +12,9 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 from geocoder import show_map, get_ll, geocoder, get_address_coords
 
 
-def get_image_and_spn(spn='0.5'):
-    if  0.5 > float(spn) > 2.5:
-        spn = '0.5'
-        print(spn)
+def get_image_and_spn(spn):
+    print(spn)
+
     toponym_to_find = 'pass'
     if toponym_to_find:
         lat, lon = 56.92, 60.56
@@ -85,18 +84,19 @@ class AlphaManagement(QMainWindow, Ui_MainWindow):
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_PageUp:
-            self.spn += 0.5
+            self.spn += 0.05
         elif event.key() == Qt.Key.Key_PageDown:
-            self.spn -= 0.5
+            self.spn -= 0.05
+        if 0.05 >= float(self.spn) > 2.5:
+            self.spn = '0.5'
         get_image_and_spn(str(self.spn))
         self.curr_image = QImage('map.png')
         self.pixmap = QPixmap.fromImage(self.curr_image)
         self.image.setPixmap(self.pixmap)
 
 
-
 if __name__ == '__main__':
-    spn = get_image_and_spn()
+    spn = get_image_and_spn(0.1)
     app = QApplication(sys.argv)
     ex = AlphaManagement(spn)
     ex.show()
