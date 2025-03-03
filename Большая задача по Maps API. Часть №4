@@ -1,0 +1,77 @@
+import os
+import sys
+import pygame
+import requests
+
+
+class CreateButton:
+    def __init__(self, x, y, width, height, text, color, text_color=(255, 255, 255), sound=None):
+        self.rect = pygame.Rect(x, y, width, height)
+        self.text = text
+        self.color = color
+        self.text_color = text_color
+        self.sound = pygame.mixer.Sound(
+            os.path.join('data', 'menu', 'sounds', 'click_sounds', sound)) if sound else None
+
+    def draw_btn(self, screen):
+        pygame.draw.rect(screen, self.color, self.rect, border_radius=5)
+        font = pygame.font.Font(None, 30)
+        text_surface = font.render(self.text, True, self.text_color)
+        text_rect = text_surface.get_rect(center=self.rect.center)
+        screen.blit(text_surface, text_rect)
+
+    def processing_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and self.rect.collidepoint(event.pos):
+            if self.sound:
+                self.sound.play()
+            return True
+        return False
+
+
+def get_map(theme):
+    server_address = 'https://static-maps.yandex.ru/v1?'
+    api_key = 'f3a0fe3a-b07e-4840-a1da-06f18b2ddf13'
+    moscow_map = f'll=60.617633,56.755820&spn=0.5,0.5&theme={theme}'
+    map_request = f"{server_address}{moscow_map}&apikey={api_key}"
+    response = requests.get(map_request)
+
+    if not response:
+        print("Ошибка выполнения запроса:", map_request)
+        print("Http статус:", response.status_code, "(", response.reason, ")")
+        sys.exit(1)
+
+    map_file = "map.png"
+    with open(map_file, "wb") as file:
+        file.write(response.content)
+
+    return map_file
+
+
+pygame.init()
+screen = pygame.display.set_mode((600, 450))
+
+current_theme = 'light'
+map_file = get_map(current_theme)
+change_theme_btn = CreateButton(400, 0, 150, 50, "Сменить тему", (0, 0, 0))
+
+running = True
+while running:
+    screen.blit(pygame.image.load(map_file), (0, 0))
+    change_theme_btn.draw_btn(screen)
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+        if change_theme_btn.processing_event(event):
+            if current_theme == 'dark':
+                current_theme = 'light'
+            else:
+                current_theme = 'dark'
+
+            map_file = get_map(current_theme)
+
+    pygame.display.flip()
+
+pygame.quit()
+os.remove(map_file)
